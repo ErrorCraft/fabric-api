@@ -90,6 +90,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchBlock;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import net.fabricmc.api.EnvType;
@@ -173,8 +174,23 @@ public class DataGeneratorTestEntrypoint implements DataGeneratorEntrypoint {
 		// do NOT add TEST_DATAGEN_DYNAMIC_EMPTY_REGISTRY_KEY, should still work without it
 	}
 
+	@Override
+	public void buildReloadableRegistry(RegistrySetBuilder registryBuilder) {
+		registryBuilder.add(
+				Registries.CONTEXT_INT_PROVIDER,
+				this::bootstrapTestContextIntProviders
+		);
+	}
+
 	private void bootstrapTestDatagenRegistry(BootstrapContext<DataGeneratorTestContent.TestDatagenObject> context) {
 		context.register(TEST_DYNAMIC_REGISTRY_ITEM_KEY, new DataGeneratorTestContent.TestDatagenObject(":tiny_potato:"));
+	}
+
+	private void bootstrapTestContextIntProviders(BootstrapContext<ContextIntProvider> context) {
+		context.register(
+				TEST_NUMBER_PROVIDER_KEY,
+				new ConstantValue(123)
+		);
 	}
 
 	private void addRegistryEntries(
@@ -534,11 +550,6 @@ public class DataGeneratorTestEntrypoint implements DataGeneratorEntrypoint {
 		protected void configure(HolderLookup.Provider registries, Entries entries) {
 			registries.lookupOrThrow(Registries.LOOT_TABLE)
 					.getOrThrow(BuiltInLootTables.PIGLIN_BARTERING);
-
-			entries.add(
-					TEST_NUMBER_PROVIDER_KEY,
-					new ConstantValue(123)
-			);
 		}
 
 		@Override

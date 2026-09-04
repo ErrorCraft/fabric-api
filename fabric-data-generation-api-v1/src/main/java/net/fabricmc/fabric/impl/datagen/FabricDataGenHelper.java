@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
@@ -45,12 +44,6 @@ import net.minecraft.data.DataProvider;
 import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.repository.BuiltInPackSource;
-import net.minecraft.server.packs.repository.PackRepository;
-import net.minecraft.server.packs.repository.ServerPacksSource;
-import net.minecraft.server.packs.resources.CloseableResourceManager;
-import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.util.Util;
 
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
@@ -119,7 +112,7 @@ public final class FabricDataGenHelper {
 		// Ensure that the DataGeneratorEntrypoint is constructed on the main thread.
 		final List<DataGeneratorEntrypoint> entrypoints = dataGeneratorInitializers.stream().map(EntrypointContainer::getEntrypoint).toList();
 		CompletableFuture<HolderLookup.Provider> worldRegistriesFuture = CompletableFuture.supplyAsync(() -> createWorldLookupProvider(entrypoints), Util.backgroundExecutor());
-		CompletableFuture<HolderLookup.Provider> registriesFuture = worldRegistriesFuture.thenComposeAsync(FabricDataGenHelper::createReloadableLookupProvider, Util.backgroundExecutor());
+		CompletableFuture<HolderLookup.Provider> registriesFuture = worldRegistriesFuture.thenComposeAsync(worldRegistries -> createReloadableLookupProvider(worldRegistries, entrypoints), Util.backgroundExecutor());
 
 		Object2IntOpenHashMap<String> jsonKeySortOrders = (Object2IntOpenHashMap<String>) DataProvider.FIXED_ORDER_FIELDS;
 		Object2IntOpenHashMap<String> defaultJsonKeySortOrders = new Object2IntOpenHashMap<>(jsonKeySortOrders);
@@ -188,42 +181,61 @@ public final class FabricDataGenHelper {
 		return registryLookup;
 	}
 
-	private static CompletableFuture<HolderLookup.Provider> createReloadableLookupProvider(HolderLookup.Provider registryLookup) {
-		PackRepository packRepository = ServerPacksSource.createVanillaTrustedRepository();
-		packRepository.reload();
-		packRepository.setSelected(List.of(BuiltInPackSource.VANILLA_ID));
-
-		CloseableResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, packRepository.openAllSelected());
-		CompletableFuture<RegistryAccess.Frozen> reloadableRegistriesFuture = RegistryDataLoader.load(
-				resourceManager,
-				registryLookup.listRegistries().toList(),
-				RegistryDataLoader.RELOADABLE_REGISTRIES,
-				Util.backgroundExecutor()
-		);
+	private static CompletableFuture<HolderLookup.Provider> createReloadableLookupProvider(HolderLookup.Provider registryLookup, List<DataGeneratorEntrypoint> dataGeneratorInitializers) {
+		// TODO: Figure out what this is actually used for.
+		//  If it can be removed, return a HolderLookup.Provider instead of a CompletableFuture<HolderLookup.Provider>
+//		PackRepository packRepository = ServerPacksSource.createVanillaTrustedRepository();
+//		packRepository.reload();
+//		packRepository.setSelected(List.of(BuiltInPackSource.VANILLA_ID));
+//
+//		CloseableResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, packRepository.openAllSelected());
+//		CompletableFuture<RegistryAccess.Frozen> reloadableRegistriesFuture = RegistryDataLoader.load(
+//				resourceManager,
+//				registryLookup.listRegistries().toList(),
+//				RegistryDataLoader.RELOADABLE_REGISTRIES,
+//				Util.backgroundExecutor()
+//		);
 
 		RegistrySetBuilder reloadableRegistryBuilder = new RegistrySetBuilder();
 		HashSet<ResourceKey<? extends Registry<?>>> vanillaReloadableRegistries = new HashSet<>();
-		HashSet<ResourceKey<? extends Registry<?>>> moddedReloadableRegistries = new HashSet<>();
-		RegistryDataLoader.RELOADABLE_REGISTRIES.forEach(registry -> vanillaReloadableRegistries.add(registry.key()));
+		VanillaRegistries.RELOADABLE_BUILDER.entries.stream()
+				.flatMap(RegistrySetBuilder.RegistryStub::requiredRegistries)
+				.forEach(vanillaReloadableRegistries::add);
 
 		for (RegistryDataLoader.RegistryData<?> registry : DynamicRegistries.getReloadableRegistries()) {
 			if (!vanillaReloadableRegistries.contains(registry.key())) {
 				addEmptyRegistry(reloadableRegistryBuilder, registry.key());
-				moddedReloadableRegistries.add(registry.key());
 			}
 		}
 
-		HolderLookup.Provider reloadableRegistryLookup = reloadableRegistryBuilder.build(registryLookup);
+		reloadableRegistryBuilder.entries.addAll(VanillaRegistries.RELOADABLE_BUILDER.entries);
+		for (DataGeneratorEntrypoint entrypoint : dataGeneratorInitializers) {
+			entrypoint.buildReloadableRegistry(reloadableRegistryBuilder);
+		}
 
-		return reloadableRegistriesFuture.thenApply(reloadableRegistries -> HolderLookup.Provider.create(
-				Stream.concat(
-						registryLookup.listRegistries(),
-						Stream.concat(
-								reloadableRegistryLookup.listRegistries().filter(lookup -> moddedReloadableRegistries.contains(lookup.key())),
-								reloadableRegistries.listRegistries()
-						)
-				)
-		)).whenComplete((_, _) -> resourceManager.close());
+		return CompletableFuture.completedFuture(reloadableRegistryBuilder.build(registryLookup));
+//		HashSet<ResourceKey<? extends Registry<?>>> vanillaReloadableRegistries = new HashSet<>();
+//		HashSet<ResourceKey<? extends Registry<?>>> moddedReloadableRegistries = new HashSet<>();
+//		RegistryDataLoader.RELOADABLE_REGISTRIES.forEach(registry -> vanillaReloadableRegistries.add(registry.key()));
+
+//		for (RegistryDataLoader.RegistryData<?> registry : DynamicRegistries.getReloadableRegistries()) {
+//			if (!vanillaReloadableRegistries.contains(registry.key())) {
+//				addEmptyRegistry(reloadableRegistryBuilder, registry.key());
+//				moddedReloadableRegistries.add(registry.key());
+//			}
+//		}
+
+//		HolderLookup.Provider reloadableRegistryLookup = reloadableRegistryBuilder.build(registryLookup);
+//
+//		return reloadableRegistriesFuture.thenApply(reloadableRegistries -> HolderLookup.Provider.create(
+//				Stream.concat(
+//						registryLookup.listRegistries(),
+//						Stream.concat(
+//								reloadableRegistryLookup.listRegistries().filter(lookup -> moddedReloadableRegistries.contains(lookup.key())),
+//								reloadableRegistries.listRegistries()
+//						)
+//				)
+//		)).whenComplete((_, _) -> resourceManager.close());
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
