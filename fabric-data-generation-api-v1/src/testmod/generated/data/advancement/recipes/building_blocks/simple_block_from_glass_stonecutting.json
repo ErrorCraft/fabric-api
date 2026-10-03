@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_charcoal": {
+    "has_glass": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": "minecraft:charcoal"
+            "items": "minecraft:glass"
           }
         ]
       }
@@ -14,19 +14,19 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": "fabric-data-gen-api-v1-testmod:torch"
+        "recipes": ":simple_block_from_glass_stonecutting"
       }
     }
   },
   "requirements": [
     [
       "has_the_recipe",
-      "has_charcoal"
+      "has_glass"
     ]
   ],
   "rewards": {
     "recipes": [
-      "fabric-data-gen-api-v1-testmod:torch"
+      ":simple_block_from_glass_stonecutting"
     ]
   }
 }

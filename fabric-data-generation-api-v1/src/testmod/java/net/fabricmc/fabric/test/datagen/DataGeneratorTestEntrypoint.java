@@ -32,9 +32,7 @@ import static net.fabricmc.fabric.test.datagen.DataGeneratorTestContent.TEST_NUM
 import static net.fabricmc.fabric.test.datagen.DataGeneratorTestContent.TEST_RELOADABLE_REGISTRY_ITEM_KEY;
 import static net.fabricmc.fabric.test.datagen.DataGeneratorTestContent.TEST_SOUND;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -361,17 +359,18 @@ public class DataGeneratorTestEntrypoint implements DataGeneratorEntrypoint {
 			translationBuilder.add(Attributes.ARMOR, "Generic Armor");
 			translationBuilder.add(TEST_SOUND, "Test Sound");
 
-			try {
-				Optional<Path> path = packOutput.getModContainer().findPath("assets/testmod/lang/en_us.base.json");
-
-				if (path.isPresent()) {
-					translationBuilder.add(path.get());
-				} else {
-					throw new RuntimeException("The existing language file could not be found in the testmod assets!");
-				}
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
+			// TODO: ModContainer
+//			try {
+//				Optional<Path> path = packOutput.getModContainer().findPath("assets/testmod/lang/en_us.base.json");
+//
+//				if (path.isPresent()) {
+//					translationBuilder.add(path.get());
+//				} else {
+//					throw new RuntimeException("The existing language file could not be found in the testmod assets!");
+//				}
+//			} catch (IOException e) {
+//				throw new RuntimeException(e);
+//			}
 
 			try {
 				translationBuilder.add(EntityTypes.ALLAY, "Allay Duplicate Test");
