@@ -99,7 +99,12 @@ public final class FabricDataGenHelper {
 
 	private static void runInternal() {
 		Path outputDir = Paths.get(Objects.requireNonNull(OUTPUT_DIR, "No output dir provided with the 'fabric-api.datagen.output-dir' property"));
-		List<EntrypointContainer<DataGeneratorEntrypoint>> dataGeneratorInitializers = getInitializers();
+		List<EntrypointContainer<DataGeneratorEntrypoint>> dataGeneratorInitializers = FabricLoader.getInstance()
+				.getEntrypointContainers(ENTRYPOINT_KEY, DataGeneratorEntrypoint.class);
+		if (dataGeneratorInitializers.isEmpty()) {
+			LOGGER.warn("No data generator entrypoints are defined. Implement {} and add your class to the '{}' entrypoint key in your fabric.mod.json.",
+					DataGeneratorEntrypoint.class.getName(), ENTRYPOINT_KEY);
+		}
 
 		// Ensure that the DataGeneratorEntrypoint is constructed on the main thread.
 		final List<DataGeneratorEntrypoint> entrypoints = dataGeneratorInitializers.stream()
@@ -108,10 +113,12 @@ public final class FabricDataGenHelper {
 		CompletableFuture<HolderLookup.Provider> worldRegistriesFuture = CompletableFuture.supplyAsync(() -> createWorldLookupProvider(entrypoints), Util.backgroundExecutor());
 		CompletableFuture<HolderLookup.Provider> registriesFuture = worldRegistriesFuture.thenApplyAsync(provider -> createReloadableLookupProvider(entrypoints, provider), Util.backgroundExecutor());
 
+		List<EntrypointContainer<DataGeneratorEntrypoint>> filteredDataGeneratorInitializers = getFilteredInitializers(dataGeneratorInitializers);
 		Object2IntOpenHashMap<String> jsonKeySortOrders = (Object2IntOpenHashMap<String>) DataProvider.FIXED_ORDER_FIELDS;
 		// TODO: Simplify the created data generator. What is the mod container used for in datagen?
 		FabricDataGenerator dataGenerator = new FabricDataGenerator(outputDir, null, STRICT_VALIDATION, worldRegistriesFuture, registriesFuture);
-		for (DataGeneratorEntrypoint entrypoint : entrypoints) {
+		for (EntrypointContainer<DataGeneratorEntrypoint> initializer : filteredDataGeneratorInitializers) {
+			DataGeneratorEntrypoint entrypoint = initializer.getEntrypoint();
 			entrypoint.addJsonKeySortOrders((key, value) -> {
 				Objects.requireNonNull(key, "Tried to register a priority for a null key");
 				jsonKeySortOrders.put(key, value);
@@ -122,7 +129,7 @@ public final class FabricDataGenHelper {
 		LOGGER.info(
 				// TODO: Remove duplicate mod ids, preferably with a better message
 				"Running data generator for {}",
-				dataGeneratorInitializers.stream()
+				filteredDataGeneratorInitializers.stream()
 						.map(entrypoint -> entrypoint.getProvider()
 								.getMetadata()
 								.getId()
@@ -137,21 +144,12 @@ public final class FabricDataGenHelper {
 		}
 	}
 
-	private static List<EntrypointContainer<DataGeneratorEntrypoint>> getInitializers() {
-		List<EntrypointContainer<DataGeneratorEntrypoint>> dataGeneratorInitializers = FabricLoader.getInstance()
-				.getEntrypointContainers(ENTRYPOINT_KEY, DataGeneratorEntrypoint.class);
-
-		if (dataGeneratorInitializers.isEmpty()) {
-			LOGGER.warn("No data generator entrypoints are defined. Implement {} and add your class to the '{}' entrypoint key in your fabric.mod.json.",
-					DataGeneratorEntrypoint.class.getName(), ENTRYPOINT_KEY);
-			return List.of();
-		}
-
+	private static List<EntrypointContainer<DataGeneratorEntrypoint>> getFilteredInitializers(List<EntrypointContainer<DataGeneratorEntrypoint>> initializers) {
 		if (MOD_ID_FILTER == null) {
-			return dataGeneratorInitializers;
+			return initializers;
 		}
 
-		return dataGeneratorInitializers.stream()
+		return initializers.stream()
 				.filter(entrypoint -> entrypoint.getProvider().getMetadata().getId().equals(MOD_ID_FILTER))
 				.toList();
 	}
