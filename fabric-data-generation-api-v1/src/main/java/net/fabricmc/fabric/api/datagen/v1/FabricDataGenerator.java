@@ -17,7 +17,6 @@
 package net.fabricmc.fabric.api.datagen.v1;
 
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.ApiStatus;
@@ -39,7 +38,8 @@ import net.fabricmc.loader.api.ModContainer;
  * An extension to vanilla's {@link DataGenerator} providing mod specific data, and helper functions.
  */
 public final class FabricDataGenerator extends DataGenerator.Cached {
-	private final ModContainer modContainer;
+	// TODO ModContainer
+//	private final ModContainer modContainer;
 	private final boolean strictValidation;
 	private final FabricPackOutput fabricOutput;
 	private final CompletableFuture<HolderLookup.Provider> worldRegistriesFuture;
@@ -48,9 +48,10 @@ public final class FabricDataGenerator extends DataGenerator.Cached {
 	@ApiStatus.Internal
 	public FabricDataGenerator(Path output, ModContainer mod, boolean strictValidation, CompletableFuture<HolderLookup.Provider> worldRegistriesFuture, CompletableFuture<HolderLookup.Provider> registriesFuture) {
 		super(output, SharedConstants.getCurrentVersion(), true);
-		this.modContainer = Objects.requireNonNull(mod);
+//		this.modContainer = Objects.requireNonNull(mod);
 		this.strictValidation = strictValidation;
-		this.fabricOutput = new FabricPackOutput(mod, output, strictValidation);
+		// TODO ModContainer
+		this.fabricOutput = new FabricPackOutput(null, output, strictValidation);
 		this.worldRegistriesFuture = worldRegistriesFuture;
 		this.registriesFuture = registriesFuture;
 	}
@@ -59,7 +60,9 @@ public final class FabricDataGenerator extends DataGenerator.Cached {
 	 * Create a default {@link Pack} instance for generating a mod's data.
 	 */
 	public Pack createPack() {
-		return new Pack(true, modContainer.getMetadata().getName(), this.fabricOutput);
+		// TODO ModContainer
+		return new Pack(true, "", this.fabricOutput);
+//		return new Pack(true, modContainer.getMetadata().getName(), this.fabricOutput);
 	}
 
 	/**
@@ -93,7 +96,7 @@ public final class FabricDataGenerator extends DataGenerator.Cached {
 	 */
 	public Pack createBuiltinPack(Identifier id, String path) {
 		Path outputPath = this.vanillaPackOutput.getOutputFolder().resolve(path);
-		return new Pack(true, id.toString(), new FabricPackOutput(modContainer, outputPath, strictValidation));
+		return new Pack(true, id.toString(), new FabricPackOutput(null, outputPath, strictValidation));
 	}
 
 	/**
@@ -102,7 +105,9 @@ public final class FabricDataGenerator extends DataGenerator.Cached {
 	 * @return a {@link ModContainer} instance
 	 */
 	public ModContainer getModContainer() {
-		return modContainer;
+		// TODO ModContainer
+		return null;
+//		return modContainer;
 	}
 
 	/**
@@ -111,7 +116,9 @@ public final class FabricDataGenerator extends DataGenerator.Cached {
 	 * @return a mod ID
 	 */
 	public String getModId() {
-		return getModContainer().getMetadata().getId();
+		// TODO ModContainer
+		return "";
+//		return getModContainer().getMetadata().getId();
 	}
 
 	/**

@@ -1,12 +1,22 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_payment": {
+    "has_pickaxe": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": "#minecraft:beacon_payment_items"
+            "items": "minecraft:golden_pickaxe"
+          }
+        ]
+      }
+    },
+    "has_shovel": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:golden_shovel"
           }
         ]
       }
@@ -14,19 +24,20 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": "fabric-data-gen-api-v1-testmod:beacon"
+        "recipes": ":gold_block"
       }
     }
   },
   "requirements": [
     [
       "has_the_recipe",
-      "has_payment"
+      "has_pickaxe",
+      "has_shovel"
     ]
   ],
   "rewards": {
     "recipes": [
-      "fabric-data-gen-api-v1-testmod:beacon"
+      ":gold_block"
     ]
   }
 }
