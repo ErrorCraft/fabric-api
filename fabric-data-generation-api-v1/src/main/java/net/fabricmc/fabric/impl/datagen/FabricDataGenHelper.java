@@ -115,19 +115,19 @@ public final class FabricDataGenHelper {
 
 		List<EntrypointContainer<DataGeneratorEntrypoint>> filteredDataGeneratorInitializers = getFilteredInitializers(dataGeneratorInitializers);
 		Object2IntOpenHashMap<String> jsonKeySortOrders = (Object2IntOpenHashMap<String>) DataProvider.FIXED_ORDER_FIELDS;
-		// TODO: Simplify the created data generator. What is the mod container used for in datagen?
-		FabricDataGenerator dataGenerator = new FabricDataGenerator(outputDir, null, STRICT_VALIDATION, worldRegistriesFuture, registriesFuture);
+		FabricDataGenerator dataGenerator = new FabricDataGenerator(outputDir, STRICT_VALIDATION, worldRegistriesFuture, registriesFuture);
 		for (EntrypointContainer<DataGeneratorEntrypoint> initializer : filteredDataGeneratorInitializers) {
 			DataGeneratorEntrypoint entrypoint = initializer.getEntrypoint();
 			entrypoint.addJsonKeySortOrders((key, value) -> {
 				Objects.requireNonNull(key, "Tried to register a priority for a null key");
 				jsonKeySortOrders.put(key, value);
 			});
+			dataGenerator.markModContainerAsActive(initializer.getProvider());
 			entrypoint.onInitializeDataGenerator(dataGenerator);
 		}
 
+		dataGenerator.markModContainerAsActive(null);
 		LOGGER.info(
-				// TODO: Remove duplicate mod ids, preferably with a better message
 				"Running data generator for {}",
 				filteredDataGeneratorInitializers.stream()
 						.map(entrypoint -> entrypoint.getProvider()

@@ -1,17 +1,12 @@
 {
-  "fabric:load_conditions": [
-    {
-      "condition": "fabric:true"
-    }
-  ],
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_stick": {
+    "has_glass": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": "minecraft:stick"
+            "items": "minecraft:glass"
           }
         ]
       }
@@ -19,19 +14,19 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": ":diamond"
+        "recipes": "fabric-data-gen-api-v1-testmod:simple_block_from_glass_stonecutting"
       }
     }
   },
   "requirements": [
     [
       "has_the_recipe",
-      "has_stick"
+      "has_glass"
     ]
   ],
   "rewards": {
     "recipes": [
-      ":diamond"
+      "fabric-data-gen-api-v1-testmod:simple_block_from_glass_stonecutting"
     ]
   }
 }
