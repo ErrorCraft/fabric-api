@@ -52,6 +52,7 @@ import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
 import net.fabricmc.fabric.api.resource.conditions.v1.ResourceCondition;
 import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
 
 public final class FabricDataGenHelper {
@@ -119,11 +120,20 @@ public final class FabricDataGenHelper {
 
 		for (EntrypointContainer<DataGeneratorEntrypoint> initializer : filteredDataGeneratorInitializers) {
 			DataGeneratorEntrypoint entrypoint = initializer.getEntrypoint();
+			ModContainer modContainer = initializer.getProvider();
+			String effectiveModId = entrypoint.getEffectiveModId();
+
+			if (effectiveModId != null) {
+				modContainer = FabricLoader.getInstance()
+						.getModContainer(effectiveModId)
+						.orElseThrow(() -> new RuntimeException("Failed to find effective mod container for mod id (%s)".formatted(effectiveModId)));
+			}
+
 			entrypoint.addJsonKeySortOrders((key, value) -> {
 				Objects.requireNonNull(key, "Tried to register a priority for a null key");
 				jsonKeySortOrders.put(key, value);
 			});
-			dataGenerator.markModContainerAsActive(initializer.getProvider());
+			dataGenerator.markModContainerAsActive(modContainer);
 			entrypoint.onInitializeDataGenerator(dataGenerator);
 		}
 
