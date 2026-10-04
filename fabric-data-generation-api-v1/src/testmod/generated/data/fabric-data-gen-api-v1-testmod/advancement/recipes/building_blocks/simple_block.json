@@ -1,17 +1,12 @@
 {
-  "fabric:load_conditions": [
-    {
-      "condition": "fabric:false"
-    }
-  ],
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_dirt": {
+    "has_log": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": "minecraft:dirt"
+            "items": "#minecraft:acacia_logs"
           }
         ]
       }
@@ -19,19 +14,19 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": ":gold_ingot"
+        "recipes": "fabric-data-gen-api-v1-testmod:simple_block"
       }
     }
   },
   "requirements": [
     [
       "has_the_recipe",
-      "has_dirt"
+      "has_log"
     ]
   ],
   "rewards": {
     "recipes": [
-      ":gold_ingot"
+      "fabric-data-gen-api-v1-testmod:simple_block"
     ]
   }
 }
