@@ -70,13 +70,12 @@ public final class FabricDataGenerator extends DataGenerator.Cached {
 	/**
 	 * Create a new {@link Pack} instance for generating a builtin resource pack.
 	 *
-	 * <p>To be used in conjunction with {@link net.fabricmc.fabric.api.resource.ResourceManagerHelper#registerBuiltinResourcePack}
+	 * <p>To be used in conjunction with {@link net.fabricmc.fabric.api.resource.v1.ResourceLoader#registerBuiltinPack}
 	 *
 	 * <p>The path in which the resource pack is generated is {@code "resourcepacks/<id path>"}. {@code id path} being the path specified
 	 * in the identifier.
 	 */
 	public Pack createBuiltinResourcePack(Identifier id) {
-		// TODO Fix Javadocs
 		Path path = this.vanillaPackOutput.getOutputFolder().resolve("resourcepacks").resolve(id.getPath());
 		return new Pack(
 				true,

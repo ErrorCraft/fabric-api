@@ -53,7 +53,7 @@ public final class FabricPackOutput extends PackOutput {
 	 * @return a mod ID
 	 */
 	public String getModId() {
-		return this.getModContainer().getMetadata().getId();
+		return getModContainer().getMetadata().getId();
 	}
 
 	/**
