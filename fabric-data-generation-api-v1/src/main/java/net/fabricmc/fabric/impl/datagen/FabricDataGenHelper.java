@@ -116,6 +116,7 @@ public final class FabricDataGenHelper {
 		List<EntrypointContainer<DataGeneratorEntrypoint>> filteredDataGeneratorInitializers = getFilteredInitializers(dataGeneratorInitializers);
 		Object2IntOpenHashMap<String> jsonKeySortOrders = (Object2IntOpenHashMap<String>) DataProvider.FIXED_ORDER_FIELDS;
 		FabricDataGenerator dataGenerator = new FabricDataGenerator(outputDir, STRICT_VALIDATION, worldRegistriesFuture, registriesFuture);
+
 		for (EntrypointContainer<DataGeneratorEntrypoint> initializer : filteredDataGeneratorInitializers) {
 			DataGeneratorEntrypoint entrypoint = initializer.getEntrypoint();
 			entrypoint.addJsonKeySortOrders((key, value) -> {
@@ -137,6 +138,7 @@ public final class FabricDataGenHelper {
 						.distinct()
 						.toList()
 		);
+
 		try {
 			dataGenerator.run();
 		} catch (Throwable t) {
