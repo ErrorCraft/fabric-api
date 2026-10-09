@@ -113,6 +113,7 @@ public final class FabricDataGenerator extends DataGenerator.Cached {
 	 *
 	 * @param modContainer The mod container.
 	 */
+	@ApiStatus.Internal
 	public void markModContainerAsActive(@Nullable ModContainer modContainer) {
 		this.activeModContainer = modContainer;
 	}
