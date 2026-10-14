@@ -51,6 +51,21 @@ public class FabricPacketMerger extends MessageToMessageDecoder<Packet<?>> {
 	}
 
 	protected void decode(ChannelHandlerContext channelHandlerContext, Packet<?> packet, List<Object> list) throws Exception {
+		FabricSplitPacketPayload splitPayload = packet instanceof GenericPayloadAccessor accessor && accessor.fabric_payload() instanceof FabricSplitPacketPayload payload ? payload : null;
+
+		try {
+			decodePacket(channelHandlerContext, packet, list);
+		} catch (Exception ex) {
+			clearMerger();
+			throw ex;
+		} finally {
+			if (splitPayload != null) {
+				splitPayload.byteBuf().release();
+			}
+		}
+	}
+
+	private void decodePacket(ChannelHandlerContext channelHandlerContext, Packet<?> packet, List<Object> list) throws Exception {
 		if (this.packetMerger != null) {
 			ensureNotTransitioning(packet);
 
@@ -65,7 +80,7 @@ public class FabricPacketMerger extends MessageToMessageDecoder<Packet<?>> {
 			}
 
 			if (this.packetMerger.add(channelHandlerContext, splitPacketPayload, list)) {
-				this.packetMerger = null;
+				clearMerger();
 			}
 		} else if (packet instanceof GenericPayloadAccessor accessor && accessor.fabric_payload() instanceof FabricSplitPacketPayload payload) {
 			ensureNotTransitioning(packet);
@@ -104,6 +119,26 @@ public class FabricPacketMerger extends MessageToMessageDecoder<Packet<?>> {
 		}
 	}
 
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+		clearMerger();
+		super.channelInactive(ctx);
+	}
+
+	@Override
+	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+		clearMerger();
+		super.handlerRemoved(ctx);
+	}
+
+	private void clearMerger() {
+		if (this.packetMerger != null) {
+			Merger merger = this.packetMerger;
+			this.packetMerger = null;
+			merger.byteBuf.release();
+		}
+	}
+
 	private static void ensureNotTransitioning(Packet<?> packet) {
 		if (packet.isTerminal()) {
 			throw new DecoderException("Terminal message received in bundle");
@@ -111,6 +146,9 @@ public class FabricPacketMerger extends MessageToMessageDecoder<Packet<?>> {
 	}
 
 	private static class Merger {
+		// Netty grows buffers above 4 MiB in 4 MiB steps.
+		private static final int MAX_INITIAL_BUFFER_SIZE = 12 * 1024 * 1024;
+
 		private final PacketDecoderAccessor packetDecoder;
 		private final Identifier packetId;
 		private final int finalSize;
@@ -120,7 +158,7 @@ public class FabricPacketMerger extends MessageToMessageDecoder<Packet<?>> {
 		Merger(PacketDecoder<?> packetDecoder, Identifier identifier, int finalSize) {
 			this.packetDecoder = (PacketDecoderAccessor) packetDecoder;
 			this.packetId = identifier;
-			this.byteBuf = Unpooled.buffer(finalSize);
+			this.byteBuf = Unpooled.buffer(Math.min(finalSize, MAX_INITIAL_BUFFER_SIZE), finalSize);
 			this.finalSize = finalSize;
 		}
 
